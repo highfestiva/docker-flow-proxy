@@ -415,16 +415,16 @@ func (s *ServerTestSuite) Test_ServeHTTP_WritesDistributed_WhenReconfigureAndDis
 	addr := fmt.Sprintf("http://127.0.0.1:8080%s&distribute=true", s.ReconfigureUrl)
 	req, _ := http.NewRequest("GET", addr, nil)
 	expected, _ := json.Marshal(Response{
-		Status:        "OK",
-		ServiceName:   s.ServiceName,
-		ServiceColor:  s.ServiceColor,
-		ServicePath:   s.ServicePath,
-		ServiceDomain: s.ServiceDomain,
-		PathType:      s.PathType,
-		Distribute:    true,
-		Message:       DISTRIBUTED,
+		Status:           "OK",
+		ServiceName:      s.ServiceName,
+		ServiceColor:     s.ServiceColor,
+		ServicePath:      s.ServicePath,
+		ServiceDomain:    s.ServiceDomain,
+		OutboundHostname: s.OutboundHostname,
+		PathType:         s.PathType,
+		Distribute:       true,
+		Message:          DISTRIBUTED,
 	})
-
 	serve.ServeHTTP(s.ResponseWriter, req)
 
 	s.ResponseWriter.AssertCalled(s.T(), "Write", []byte(expected))

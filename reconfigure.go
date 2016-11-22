@@ -176,6 +176,9 @@ func (m *Reconfigure) reloadFromRegistry(addresses []string, instanceName, mode 
 	if err := proxy.CreateConfigFromTemplates(m.TemplatesPath, m.ConfigsPath); err != nil {
 		return err
 	}
+	if count == 0 && len(body) > 0 {
+		return fmt.Errorf("Config response was non-empty and invalid")
+	}
 	return proxy.Reload()
 }
 
