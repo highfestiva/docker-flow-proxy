@@ -46,6 +46,7 @@ type ServiceReconfigure struct {
 	Acl                  string
 	AclCondition         string
 	FullServiceName      string
+	Host                 string
 	Distribute           bool
 	LookupRetry          int
 	LookupRetryInterval  int
@@ -287,13 +288,17 @@ func (m *Reconfigure) GetTemplates(sr ServiceReconfigure) (front, back string, e
 func (m *Reconfigure) getConsulTemplateFromGo(sr ServiceReconfigure) (frontend, backend string) {
 	sr.Acl = ""
 	sr.AclCondition = ""
+	sr.Host = m.ServiceName
+	if len(m.OutboundHostname) > 0 {
+		sr.Host = m.OutboundHostname
+	}
 	if len(sr.ServiceDomain) > 0 {
 		sr.Acl = fmt.Sprintf(`
     acl domain_%s hdr_dom(host) -i %s`,
-			sr.ServiceName,
+			sr.Host,
 			sr.ServiceDomain,
 		)
-		sr.AclCondition = fmt.Sprintf(" domain_%s", sr.ServiceName)
+		sr.AclCondition = fmt.Sprintf(" domain_%s", sr.Host)
 	}
 	if len(sr.ServiceColor) > 0 {
 		sr.FullServiceName = fmt.Sprintf("%s-%s", sr.ServiceName, sr.ServiceColor)
@@ -304,12 +309,12 @@ func (m *Reconfigure) getConsulTemplateFromGo(sr ServiceReconfigure) (frontend, 
 		sr.PathType = "path_beg"
 	}
 	srcFront := `
-    acl url_{{.ServiceName}}{{range .ServicePath}} {{$.PathType}} {{.}}{{end}}{{.Acl}}
-    use_backend {{.ServiceName}}-be if url_{{.ServiceName}}{{.AclCondition}}`
-	srcBack := `backend {{.ServiceName}}-be
+    acl url_{{.Host}}{{range .ServicePath}} {{$.PathType}} {{.}}{{end}}{{.Acl}}
+    use_backend {{.Host}}-be if url_{{.Host}}{{.AclCondition}}`
+	srcBack := `backend {{.Host}}-be
     `
 	if strings.EqualFold(sr.Mode, "service") || strings.EqualFold(sr.Mode, "swarm") {
-		srcBack += `server {{.ServiceName}} {{.ServiceName}}:{{.Port}}`
+		srcBack += `server {{.Host}} {{.Host}}:{{.Port}}`
 	} else {
 		srcBack += `{{"{{"}}range $i, $e := service "{{.FullServiceName}}" "any"{{"}}"}}
     server {{"{{$e.Node}}_{{$i}}_{{$e.Port}} {{$e.Address}}:{{$e.Port}}"}}{{if eq .SkipCheck false}} check{{end}}
