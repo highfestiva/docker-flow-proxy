@@ -69,8 +69,12 @@ func (m *Reconfigure) Execute(args []string) error {
 	mu.Lock()
 	defer mu.Unlock()
 	if isSwarm(m.ServiceReconfigure.Mode) && !m.skipAddressValidation {
-		if _, err := lookupHost(m.ServiceName); err != nil {
-			logPrintf("Could not reach the service %s. Is the service running and connected to the same network as the proxy?", m.ServiceName)
+		host := m.ServiceName
+		if len(m.OutboundHostname) > 0 {
+			host = m.OutboundHostname
+		}
+		if _, err := lookupHost(host); err != nil {
+			logPrintf("Could not reach the service %s. Is the service running and connected to the same network as the proxy?", host)
 			return err
 		}
 	}
